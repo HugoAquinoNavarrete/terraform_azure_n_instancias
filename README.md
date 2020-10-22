@@ -11,7 +11,7 @@ Sigue las instrucciones del sitio `https://microsoft.com/devicelogin` e ingresar
    ```
    Sálvala en el directorio donde correras este script `<ruta_absoluta>/key`, deja vacío `passphrase`
 
-   Cambia los permisos el archivo `chmod 400 kwy`
+   Cambia los permisos el archivo `chmod 400 key`
 
 ## 3. Conexión por SSH a la máquina virtual 
    ```bash
