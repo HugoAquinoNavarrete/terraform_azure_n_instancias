@@ -180,19 +180,8 @@ resource "azurerm_network_interface_security_group_association" "security-group_
     network_security_group_id = azurerm_network_security_group.security-group.id
 }
 
-# Genera texto al azar para la cuenta de almacenamiento
-#resource "random_id" "randomId" {
-#    keepers = {
-        # Genera un nuevo ID solo cuando un Resource Group es definido
-#        resource_group = "${azurerm_resource_group.rg.name}"
-#    }
-#    byte_length = 8
-#}
-
-
 # Crea una cuenta de almacenamiento para diagnóstico en boot
 resource "azurerm_storage_account" "cuenta-almacenamiento" {
-    #name                        = "diag${random_id.randomId.hex}"
     name                        = "diag${var.nombre_instancia}"
     #resource_group_name         = "${azurerm_resource_group.rg.name}" # Línea usada en versión 0.11.3
     resource_group_name         = azurerm_resource_group.rg.name
