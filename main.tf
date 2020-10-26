@@ -3,6 +3,8 @@
 # Hugo Aquino
 # Octubre 2020
 
+# Script desarrollado inicialmente para la versión 0.11.3, que se migra a la versión 0.15.3
+
 # Antes de ejecutar este script, ejecuta "az login"
 # Sigue las instrucciones del sitio "https://microsoft.com/devicelogin"
 # e ingresar el código
