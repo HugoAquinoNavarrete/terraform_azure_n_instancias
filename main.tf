@@ -16,6 +16,9 @@
 # Para conectarte con la VM una vez creada
 # ssh -v -l azureuser -i key <ip_publica_instancia_creada>
 
+# Para correr este script desde la consola:
+# terraform apply -var "nombre_instancia=<nombre_recursos>" -var "cantidad_instancias=<n>"
+
 # Para ajustar la cantidad de VMs a crear hay que cambiar el valor de la siguiente variable a la cantidad "default = n"
 
 # Variable para saber cuantas instancias crear
@@ -34,9 +37,9 @@ provider "azurerm" {
     features {}
 }
 
-provider "random" {
-    version = "=2.2.1"
-}
+#provider "random" {
+#    version = "=2.2.1"
+#}
 
 # Crear un Resource Group si no existe
 resource "azurerm_resource_group" "rg" {
@@ -44,7 +47,8 @@ resource "azurerm_resource_group" "rg" {
     location = "eastus"
 
     tags = {
-        environment = "${var.nombre_instancia}"
+        #environment = "${var.nombre_instancia}" # Línea usada en versión 0.11.3
+        environment = var.nombre_instancia
     }
 }
 
@@ -53,31 +57,40 @@ resource "azurerm_virtual_network" "vn" {
     name                = "${var.nombre_instancia}-vn"
     address_space       = ["10.0.0.0/16"]
     location            = "eastus"
-    resource_group_name = "${azurerm_resource_group.rg.name}"
+    #resource_group_name = "${azurerm_resource_group.rg.name}" # Línea usada en versión 0.11.3
+    resource_group_name = azurerm_resource_group.rg.name
 
     tags = {
-        environment = "${var.nombre_instancia}"
+        #environment = "${var.nombre_instancia}" # Línea usada en versiób 0.11.3
+        environment = var.nombre_instancia
     }
 }
 
 # Crea las subredes
 resource "azurerm_subnet" "subred" {
-    name                 = "${var.nombre_instancia}"
-    resource_group_name  = "${azurerm_resource_group.rg.name}"
-    virtual_network_name = "${azurerm_virtual_network.vn.name}"
-    address_prefix       = "10.0.1.0/24"
+    #name                 = "${var.nombre_instancia}" # Línea usada en versión 0.11.3
+    name                 = var.nombre_instancia
+    #resource_group_name  = "${azurerm_resource_group.rg.name}" # Línea usada en versión 0.11.3
+    resource_group_name  = azurerm_resource_group.rg.name
+    #virtual_network_name = "${azurerm_virtual_network.vn.name}" # Línea usada en versiób 0.11.3
+    virtual_network_name = azurerm_virtual_network.vn.name
+    #address_prefix       = "10.0.1.0/24" # Línea usada en versió 0.11.3
+    address_prefixes     = ["10.0.1.0/24"]
 }
 
 # Crea IPs públicas
 resource "azurerm_public_ip" "ip-publica" {
-    count                        = "${var.cantidad_instancias}"
+    #count                        = "${var.cantidad_instancias}" # Línea usada en versiób 0.11.3
+    count                        = var.cantidad_instancias
     name                         = "${var.nombre_instancia}-ip-publica-${count.index + 1}"
     location                     = "eastus"
-    resource_group_name          = "${azurerm_resource_group.rg.name}"
+    #resource_group_name          = "${azurerm_resource_group.rg.name}" # Línea usada en versión 0.11.3
+    resource_group_name          = azurerm_resource_group.rg.name
     allocation_method            = "Dynamic"
 
     tags = {
-        environment = "${var.nombre_instancia}"
+        #environment = "${var.nombre_instancia}" # Línea usada en versión 0.11.3
+        environment = var.nombre_instancia
     }
 }
 
@@ -85,7 +98,8 @@ resource "azurerm_public_ip" "ip-publica" {
 resource "azurerm_network_security_group" "security-group" {
     name                = "${var.nombre_instancia}-security-group"
     location            = "eastus"
-    resource_group_name = "${azurerm_resource_group.rg.name}"
+    #resource_group_name = "${azurerm_resource_group.rg.name}" # Línea usada en versión 0.11.3
+    resource_group_name = azurerm_resource_group.rg.name
 
     security_rule {
         name                       = "SSH"
@@ -124,70 +138,82 @@ resource "azurerm_network_security_group" "security-group" {
     }
 
     tags = {
-        environment = "${var.nombre_instancia}"
+        #environment = "${var.nombre_instancia}" # Línea usada en versión 0.11.3
+        environment = var.nombre_instancia
     }
 }
 
 
 # Crea interfaz de red
 resource "azurerm_network_interface" "interfaz-red" {
-    count                     = "${var.cantidad_instancias}"
-    name                      = "${var.nombre_instancia}-interfaz-red-${count.index + 1}"
-    #name                      = "linux-training-interfaz-red"
-    #name                      = "linux-training-interfaz-red-${count.index + 1}"               
+    #count                     = "${var.cantidad_instancias}" # Línea usada en versión 0.11.3
+    count                     = var.cantidad_instancias
+    name                      = "${var.nombre_instancia}-interfaz-red-${count.index + 1}"      
     location                  = "eastus"
-    resource_group_name       = "${azurerm_resource_group.rg.name}"
+    #resource_group_name       = "${azurerm_resource_group.rg.name}" # Línea usada en versión 0.11.3
+    resource_group_name       = azurerm_resource_group.rg.name
 
     ip_configuration {
-        #name                          = "linux-training-interfaz-configuracion"
         name                          = "${var.nombre_instancia}-interfaz-configuracion-${count.index + 1}"
-        subnet_id                     = "${azurerm_subnet.subred.id}"
+        #subnet_id                     = "${azurerm_subnet.subred.id}" # Línea usada en versión 0.11.3
+        subnet_id                     = azurerm_subnet.subred.id
         private_ip_address_allocation = "Dynamic"
-        public_ip_address_id          = "${element(azurerm_public_ip.ip-publica.*.id, count.index)}"
+        #public_ip_address_id          = "${element(azurerm_public_ip.ip-publica.*.id, count.index)}" # Línea usada en versión 0.11.3
+        public_ip_address_id          = element(azurerm_public_ip.ip-publica.*.id, count.index)
     }
 
     tags = {
-        environment = "${var.nombre_instancia}"
+        #environment = "${var.nombre_instancia}" # Línea usada en versión 0.11.3
+         environment = var.nombre_instancia
     }
 }
 
 # Conecta el Security Group a la interfaz de red
 resource "azurerm_network_interface_security_group_association" "security-group_asociacion" {
-    count                     = "${var.cantidad_instancias}"
-    network_interface_id      = "${element(azurerm_network_interface.interfaz-red.*.id, count.index)}"
-    network_security_group_id = "${azurerm_network_security_group.security-group.id}"
+    #count                     = "${var.cantidad_instancias}" # Línea usada en versión 0.11.3
+    count                     = var.cantidad_instancias
+    #network_interface_id      = "${element(azurerm_network_interface.interfaz-red.*.id, count.index)}" # Línea usada en versión 0.11.3
+    network_interface_id      = element(azurerm_network_interface.interfaz-red.*.id, count.index)
+    #network_security_group_id = "${azurerm_network_security_group.security-group.id}" # Línea usada en versión 0.11.3
+    network_security_group_id = azurerm_network_security_group.security-group.id
 }
 
 # Genera texto al azar para la cuenta de almacenamiento
-resource "random_id" "randomId" {
-    keepers = {
+#resource "random_id" "randomId" {
+#    keepers = {
         # Genera un nuevo ID solo cuando un Resource Group es definido
-        resource_group = "${azurerm_resource_group.rg.name}"
-    }
-    byte_length = 8
-}
+#        resource_group = "${azurerm_resource_group.rg.name}"
+#    }
+#    byte_length = 8
+#}
 
 
 # Crea una cuenta de almacenamiento para diagnóstico en boot
 resource "azurerm_storage_account" "cuenta-almacenamiento" {
-    name                        = "diag${random_id.randomId.hex}"
-    resource_group_name         = "${azurerm_resource_group.rg.name}"
+    #name                        = "diag${random_id.randomId.hex}"
+    name                        = "diag${var.nombre_instancia}"
+    #resource_group_name         = "${azurerm_resource_group.rg.name}" # Línea usada en versión 0.11.3
+    resource_group_name         = azurerm_resource_group.rg.name
     location                    = "eastus"
     account_tier                = "Standard"
     account_replication_type    = "LRS"
 
     tags = {
-        environment = "${var.nombre_instancia}"
+        #environment = "${var.nombre_instancia}" # Línea usada en versión 0.11.3
+        environment = var.nombre_instancia
     }
 }
 
 # Crea la máquina virtual
 resource "azurerm_linux_virtual_machine" "virtual_machine" {
-    count                 = "${var.cantidad_instancias}"
+    #count                 = "${var.cantidad_instancias}" # Línea usada en versión 0.11.3
+    count                 = var.cantidad_instancias
     name                  = "${var.nombre_instancia}-${count.index + 1}"
     location              = "eastus"
-    resource_group_name   = "${azurerm_resource_group.rg.name}"
-    network_interface_ids = ["${element(azurerm_network_interface.interfaz-red.*.id, count.index)}"]
+    #resource_group_name   = "${azurerm_resource_group.rg.name}" # Línea usada en versiób 0.11.3
+    resource_group_name   = azurerm_resource_group.rg.name
+    #network_interface_ids = ["${element(azurerm_network_interface.interfaz-red.*.id, count.index)}"] # Línea usada en versión 0.11.3
+    network_interface_ids = [element(azurerm_network_interface.interfaz-red.*.id, count.index)]
     size                  = "Standard_DS1_v2"
 
     os_disk {
@@ -203,20 +229,24 @@ resource "azurerm_linux_virtual_machine" "virtual_machine" {
         version   = "latest"
     }
 
-    computer_name  = "${var.nombre_instancia}"
+    #computer_name  = "${var.nombre_instancia}" # Línea usada en versión 0.11.3
+    computer_name  = var.nombre_instancia
     admin_username = "azureuser"
     disable_password_authentication = true
 
     admin_ssh_key {
         username        = "azureuser"
-	public_key	= "${file("key.pub")}"
+	#public_key	= "${file("key.pub")}" # Línea usada en versión 0.11.3
+        public_key      = file("key.pub")
     }
 
     boot_diagnostics {
-        storage_account_uri = "${azurerm_storage_account.cuenta-almacenamiento.primary_blob_endpoint}"
+        #storage_account_uri = "${azurerm_storage_account.cuenta-almacenamiento.primary_blob_endpoint}" # Línea usada en versión 0.11.3
+         storage_account_uri = azurerm_storage_account.cuenta-almacenamiento.primary_blob_endpoint
     }
 
     tags = {
-        environment = "${var.nombre_instancia}"
+        #environment = "${var.nombre_instancia}" # Línea usada en versión 0.11.3
+        environment = var.nombre_instancia
     }
 }
